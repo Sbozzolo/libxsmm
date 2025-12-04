@@ -587,6 +587,14 @@ ifeq (,$(strip $(FC_NAME)))
   FC_NAME := $(call qname,$(call qndir,$(FC)))
 endif
 
+# Detect flang compiler
+FLANG := 0
+ifneq (,$(strip $(FC)))
+  ifneq (,$(findstring flang,$(FC_NAME)))
+    FLANG := 1
+  endif
+endif
+
 ifneq (0,$(FORTRAN))
   ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
@@ -1957,9 +1965,11 @@ ifeq (0,$(COMPATIBLE))
         FCFLAGS += -funroll-loops
       endif
     endif
-    ifeq (,$(filter-out 0,$(PGI) $(INTEL) $(ICX) $(CRAY)))
+    ifneq (0,$(XSMM_GCC))
       CXXFLAGS += -ftree-vectorize
       CFLAGS += -ftree-vectorize
+    endif
+    ifneq (,$(strip $(GFC)))
       FCFLAGS += -ftree-vectorize
     endif
   endif
@@ -2006,6 +2016,8 @@ ifeq (0,$(COMPATIBLE))
       CFLAGS += -fdata-sections -ffunction-sections
       ifeq (,$(filter-out 0,$(INTEL) $(ICX)))
         FCFLAGS += -fdata-sections -ffunction-sections
+      else ifneq (0,$(FLANG))
+        FCFLAGS += -Xclang -fdata-sections -Xclang -ffunction-sections
       else ifneq (,$(strip $(GFC)))
         FCFLAGS += -fdata-sections -ffunction-sections
       endif
